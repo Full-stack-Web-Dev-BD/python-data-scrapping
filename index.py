@@ -1,4 +1,5 @@
 from selenium import webdriver
+import sqlite3
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from bs4 import BeautifulSoup
@@ -117,6 +118,49 @@ print("Total Product Found", len(product_details_list))
 # Save the scraped data to a JSON file
 with open("product_data.json", "w", encoding="utf-8") as json_file:
     json.dump(product_details_list, json_file, indent=4, ensure_ascii=False)
+
+
+
+
+import json
+
+# Define the output SQL file name
+sql_file_name = "product_data.sql"
+
+with open(sql_file_name, "w", encoding="utf-8") as sql_file:
+    # Write the SQL command to create the table
+    sql_file.write("CREATE TABLE IF NOT EXISTS products (\n")
+    sql_file.write("    product_id TEXT PRIMARY KEY,\n")
+    sql_file.write("    product_name TEXT,\n")
+    sql_file.write("    description TEXT,\n")
+    sql_file.write("    product_price TEXT,\n")
+    sql_file.write("    image_URL TEXT,\n")
+    sql_file.write("    properties TEXT,\n")
+    sql_file.write("    supplier_info TEXT\n")
+    sql_file.write(");\n\n")
+    
+    # Loop over the product details and write an INSERT statement for each
+    for product in product_details_list:
+        # Convert dictionaries to JSON strings for properties and supplier_info
+        properties_json = json.dumps(product['properties'])
+        supplier_info_json = json.dumps(product['supplier_info'])
+        
+        # Replace single quotes in text fields to avoid SQL errors
+        product_id = product['product_id'].replace("'", "''")
+        product_name = product['product_name'].replace("'", "''")
+        description = product['description'].replace("'", "''")
+        product_price = product['product_price'].replace("'", "''")
+        image_URL = product['image_URL'].replace("'", "''")
+        properties_json = properties_json.replace("'", "''")
+        supplier_info_json = supplier_info_json.replace("'", "''")
+        
+        # Write the INSERT statement
+        sql_file.write(
+            f"INSERT INTO products (product_id, product_name, description, product_price, image_URL, properties, supplier_info) "
+            f"VALUES ('{product_id}', '{product_name}', '{description}', '{product_price}', '{image_URL}', '{properties_json}', '{supplier_info_json}');\n"
+        )
+
+print(f"Data saved to SQL file '{sql_file_name}' successfully!")
 
 print("Data saved to product_data.json successfully!")
 # Close the browser after scraping
